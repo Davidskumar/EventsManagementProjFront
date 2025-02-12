@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://eventsmanagementprojback.onrender.com",
+  baseURL: "https://eventsmanagementprojback.onrender.com/api",
 });
 
 // Attach token to requests
