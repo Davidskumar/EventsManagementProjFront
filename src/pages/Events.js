@@ -4,8 +4,10 @@ import { io } from "socket.io-client";
 
 const Events = () => {
   const [events, setEvents] = useState([]);
-  const [form, setForm] = useState({ title: "", description: "", date: "" });
+  const [form, setForm] = useState({ title: "", description: "", date: "", category: "" });
   const [editingId, setEditingId] = useState(null);
+  const [filterCategory, setFilterCategory] = useState(""); // 🔍 Category Filter
+  const [filterDate, setFilterDate] = useState(""); // 🔍 Date Filter
   const socketRef = useRef(null);
   const user = JSON.parse(localStorage.getItem("user")) || {}; // 🔹 Get logged-in user (or guest)
 
@@ -67,7 +69,7 @@ const Events = () => {
         const { data } = await createEvent(form);
         setEvents((prevEvents) => [...prevEvents, data]);
       }
-      setForm({ title: "", description: "", date: "" });
+      setForm({ title: "", description: "", date: "", category: "" });
       setEditingId(null);
     } catch (error) {
       console.error("Error saving event:", error);
@@ -75,7 +77,12 @@ const Events = () => {
   };
 
   const handleEdit = (event) => {
-    setForm({ title: event.title, description: event.description, date: event.date.split("T")[0] });
+    setForm({
+      title: event.title,
+      description: event.description,
+      date: event.date.split("T")[0],
+      category: event.category
+    });
     setEditingId(event._id);
   };
 
@@ -96,13 +103,25 @@ const Events = () => {
     <div>
       <h2>Events</h2>
 
+      {/* Filters */}
+      <div>
+        <select onChange={(e) => setFilterCategory(e.target.value)} value={filterCategory}>
+          <option value="">All Categories</option>
+          <option value="Conference">Conference</option>
+          <option value="Workshop">Workshop</option>
+          <option value="Meetup">Meetup</option>
+        </select>
+
+        <input type="date" onChange={(e) => setFilterDate(e.target.value)} value={filterDate} />
+      </div>
+
       {/* Event Form - Hidden for Guest Users */}
       {user.id !== "guest" && (
         <form onSubmit={handleSubmit}>
           <input type="text" name="title" placeholder="Title" value={form.title} onChange={handleChange} required />
           <input type="text" name="description" placeholder="Description" value={form.description} onChange={handleChange} required />
           <input type="date" name="date" value={form.date} onChange={handleChange} required />
-          
+
           {/* Category Selection */}
           <select name="category" value={form.category} onChange={handleChange} required>
             <option value="">Select Category</option>
@@ -110,10 +129,9 @@ const Events = () => {
             <option value="Workshop">Workshop</option>
             <option value="Meetup">Meetup</option>
           </select>
-        
+
           <button type="submit">{editingId ? "Update Event" : "Create Event"}</button>
         </form>
-
       )}
 
       {/* Display Events in Table Format */}
@@ -123,27 +141,32 @@ const Events = () => {
             <th>Title</th>
             <th>Description</th>
             <th>Date</th>
+            <th>Category</th>
             <th>Created By</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {events.map((event) => (
-            <tr key={event._id}>
-              <td>{event.title}</td>
-              <td>{event.description}</td>
-              <td>{new Date(event.date).toDateString()}</td>
-              <td>{event.createdBy?.name || "Unknown"}</td>
-              <td>
-                {user.id !== "guest" && event.createdBy?._id === user?.id && (
-                  <>
-                    <button onClick={() => handleEdit(event)}>Edit</button>
-                    <button onClick={() => handleDelete(event._id)}>Delete</button>
-                  </>
-                )}
-              </td>
-            </tr>
-          ))}
+          {events
+            .filter((event) => (filterCategory ? event.category === filterCategory : true)) // 🔍 Filter by Category
+            .filter((event) => (filterDate ? event.date.split("T")[0] === filterDate : true)) // 🔍 Filter by Date
+            .map((event) => (
+              <tr key={event._id}>
+                <td>{event.title}</td>
+                <td>{event.description}</td>
+                <td>{new Date(event.date).toDateString()}</td>
+                <td>{event.category}</td> {/* ✅ Show category */}
+                <td>{event.createdBy?.name || "Unknown"}</td>
+                <td>
+                  {user.id !== "guest" && event.createdBy?._id === user?.id && (
+                    <>
+                      <button onClick={() => handleEdit(event)}>Edit</button>
+                      <button onClick={() => handleDelete(event._id)}>Delete</button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            ))}
         </tbody>
       </table>
     </div>
