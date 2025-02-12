@@ -102,8 +102,18 @@ const Events = () => {
           <input type="text" name="title" placeholder="Title" value={form.title} onChange={handleChange} required />
           <input type="text" name="description" placeholder="Description" value={form.description} onChange={handleChange} required />
           <input type="date" name="date" value={form.date} onChange={handleChange} required />
+          
+          {/* Category Selection */}
+          <select name="category" value={form.category} onChange={handleChange} required>
+            <option value="">Select Category</option>
+            <option value="Conference">Conference</option>
+            <option value="Workshop">Workshop</option>
+            <option value="Meetup">Meetup</option>
+          </select>
+        
           <button type="submit">{editingId ? "Update Event" : "Create Event"}</button>
         </form>
+
       )}
 
       {/* Display Events in Table Format */}
