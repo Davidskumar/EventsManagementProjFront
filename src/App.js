@@ -6,7 +6,14 @@ import Signup from "./pages/Signup";
 import Events from "./pages/Events";
 
 const PrivateRoute = ({ children }) => {
-  return localStorage.getItem("token") ? children : <Navigate to="/login" />;
+  const user = JSON.parse(localStorage.getItem("user")); // Get user info
+  const token = localStorage.getItem("token");
+
+  if (user?.id === "guest" || token) {
+    return children; // ✅ Allow both guests and authenticated users
+  } else {
+    return <Navigate to="/login" />;
+  }
 };
 
 function App() {
