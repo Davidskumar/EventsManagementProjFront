@@ -7,6 +7,7 @@ const Events = () => {
   const [form, setForm] = useState({ title: "", description: "", date: "" });
   const [editingId, setEditingId] = useState(null);
   const socketRef = useRef(null);
+  const user = JSON.parse(localStorage.getItem("user")) || {}; // 🔹 Get logged-in user (or guest)
 
   useEffect(() => {
     const loadEvents = async () => {
@@ -52,6 +53,10 @@ const Events = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (user.id === "guest") {
+      alert("Guest users cannot create events. Please log in.");
+      return;
+    }
     try {
       if (editingId) {
         const { data } = await updateEvent(editingId, form);
@@ -75,6 +80,10 @@ const Events = () => {
   };
 
   const handleDelete = async (id) => {
+    if (user.id === "guest") {
+      alert("Guest users cannot delete events. Please log in.");
+      return;
+    }
     try {
       await deleteEvent(id);
       setEvents((prevEvents) => prevEvents.filter((event) => event._id !== id));
@@ -87,13 +96,15 @@ const Events = () => {
     <div>
       <h2>Events</h2>
 
-      {/* Event Form */}
-      <form onSubmit={handleSubmit}>
-        <input type="text" name="title" placeholder="Title" value={form.title} onChange={handleChange} required />
-        <input type="text" name="description" placeholder="Description" value={form.description} onChange={handleChange} required />
-        <input type="date" name="date" value={form.date} onChange={handleChange} required />
-        <button type="submit">{editingId ? "Update Event" : "Create Event"}</button>
-      </form>
+      {/* Event Form - Hidden for Guest Users */}
+      {user.id !== "guest" && (
+        <form onSubmit={handleSubmit}>
+          <input type="text" name="title" placeholder="Title" value={form.title} onChange={handleChange} required />
+          <input type="text" name="description" placeholder="Description" value={form.description} onChange={handleChange} required />
+          <input type="date" name="date" value={form.date} onChange={handleChange} required />
+          <button type="submit">{editingId ? "Update Event" : "Create Event"}</button>
+        </form>
+      )}
 
       {/* Display Events in Table Format */}
       <table border="1" cellPadding="8" cellSpacing="0" style={{ width: "100%", marginTop: "20px", textAlign: "left" }}>
@@ -114,7 +125,7 @@ const Events = () => {
               <td>{new Date(event.date).toDateString()}</td>
               <td>{event.createdBy?.name || "Unknown"}</td>
               <td>
-                {event.createdBy && event.createdBy._id === JSON.parse(localStorage.getItem("user"))?.id && (
+                {user.id !== "guest" && event.createdBy?._id === user?.id && (
                   <>
                     <button onClick={() => handleEdit(event)}>Edit</button>
                     <button onClick={() => handleDelete(event._id)}>Delete</button>
