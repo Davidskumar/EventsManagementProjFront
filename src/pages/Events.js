@@ -21,20 +21,21 @@ const Events = () => {
     loadEvents(); // Fetch events initially
 
     if (!socketRef.current) {
-      socketRef.current = io("http://localhost:5000");
+      socketRef.current = io("https://eventsmanagementprojback.onrender.com"); // ✅ Use live backend URL
 
+      // Listen for event creations
       socketRef.current.on("eventCreated", (newEvent) => {
-        if (newEvent.createdBy) {
-          setEvents((prevEvents) => [...prevEvents, newEvent]);
-        }
+        setEvents((prevEvents) => [...prevEvents, newEvent]);
       });
 
+      // Listen for event updates
       socketRef.current.on("eventUpdated", (updatedEvent) => {
         setEvents((prevEvents) =>
           prevEvents.map((event) => (event._id === updatedEvent._id ? updatedEvent : event))
         );
       });
 
+      // Listen for event deletions
       socketRef.current.on("eventDeleted", (deletedId) => {
         setEvents((prevEvents) => prevEvents.filter((event) => event._id !== deletedId));
       });
@@ -60,11 +61,11 @@ const Events = () => {
       if (editingId) {
         const { data } = await updateEvent(editingId, form);
         setEvents((prevEvents) =>
-          prevEvents.map((event) => (event._id === editingId ? data : event)) //  Update event in state
+          prevEvents.map((event) => (event._id === editingId ? data : event)) // 🔥 Update event in state
         );
       } else {
         const { data } = await createEvent(form);
-        setEvents((prevEvents) => [...prevEvents, data]); //  Add new event to state
+        setEvents((prevEvents) => [...prevEvents, data]); // 🔥 Add new event to state
       }
       setForm({ title: "", description: "", date: "" });
       setEditingId(null);
@@ -72,7 +73,6 @@ const Events = () => {
       console.error("Error saving event:", error);
     }
   };
-
 
   // Handle Edit
   const handleEdit = (event) => {
@@ -84,7 +84,7 @@ const Events = () => {
   const handleDelete = async (id) => {
     try {
       await deleteEvent(id);
-      setEvents((prevEvents) => prevEvents.filter((event) => event._id !== id)); // Remove event from UI immediately
+      setEvents((prevEvents) => prevEvents.filter((event) => event._id !== id)); // 🔥 Remove event from UI immediately
     } catch (error) {
       console.error("Error deleting event:", error);
     }
