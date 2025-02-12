@@ -58,9 +58,13 @@ const Events = () => {
     e.preventDefault();
     try {
       if (editingId) {
-        await updateEvent(editingId, form);
+        const { data } = await updateEvent(editingId, form);
+        setEvents((prevEvents) =>
+          prevEvents.map((event) => (event._id === editingId ? data : event)) //  Update event in state
+        );
       } else {
-        await createEvent(form);
+        const { data } = await createEvent(form);
+        setEvents((prevEvents) => [...prevEvents, data]); //  Add new event to state
       }
       setForm({ title: "", description: "", date: "" });
       setEditingId(null);
@@ -68,6 +72,7 @@ const Events = () => {
       console.error("Error saving event:", error);
     }
   };
+
 
   // Handle Edit
   const handleEdit = (event) => {
