@@ -66,7 +66,13 @@ const Events = () => {
           prevEvents.map((event) => (event._id === editingId ? data : event))
         );
       } else {
-        const { data } = await createEvent(form);
+        // ✅ Fix: Ensure category is included in API request
+        const { data } = await createEvent({
+          title: form.title,
+          description: form.description,
+          date: form.date,
+          category: form.category, // 🔹 Ensure category is sent
+        });
         setEvents((prevEvents) => [...prevEvents, data]);
       }
       setForm({ title: "", description: "", date: "", category: "" });
