@@ -6,7 +6,7 @@ const Events = () => {
   const [events, setEvents] = useState([]);
   const [form, setForm] = useState({ title: "", description: "", date: "" });
   const [editingId, setEditingId] = useState(null);
-  const socketRef = useRef(null); // Store socket instance
+  const socketRef = useRef(null);
 
   useEffect(() => {
     const loadEvents = async () => {
@@ -21,21 +21,18 @@ const Events = () => {
     loadEvents(); // Fetch events initially
 
     if (!socketRef.current) {
-      socketRef.current = io("https://eventsmanagementprojback.onrender.com"); // ✅ Use live backend URL
+      socketRef.current = io("https://eventsmanagementprojback.onrender.com");
 
-      // Listen for event creations
       socketRef.current.on("eventCreated", (newEvent) => {
         setEvents((prevEvents) => [...prevEvents, newEvent]);
       });
 
-      // Listen for event updates
       socketRef.current.on("eventUpdated", (updatedEvent) => {
         setEvents((prevEvents) =>
           prevEvents.map((event) => (event._id === updatedEvent._id ? updatedEvent : event))
         );
       });
 
-      // Listen for event deletions
       socketRef.current.on("eventDeleted", (deletedId) => {
         setEvents((prevEvents) => prevEvents.filter((event) => event._id !== deletedId));
       });
@@ -49,23 +46,21 @@ const Events = () => {
     };
   }, []);
 
-  // Handle form input changes
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Create or Update Event
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       if (editingId) {
         const { data } = await updateEvent(editingId, form);
         setEvents((prevEvents) =>
-          prevEvents.map((event) => (event._id === editingId ? data : event)) // 🔥 Update event in state
+          prevEvents.map((event) => (event._id === editingId ? data : event))
         );
       } else {
         const { data } = await createEvent(form);
-        setEvents((prevEvents) => [...prevEvents, data]); // 🔥 Add new event to state
+        setEvents((prevEvents) => [...prevEvents, data]);
       }
       setForm({ title: "", description: "", date: "" });
       setEditingId(null);
@@ -74,17 +69,15 @@ const Events = () => {
     }
   };
 
-  // Handle Edit
   const handleEdit = (event) => {
     setForm({ title: event.title, description: event.description, date: event.date.split("T")[0] });
     setEditingId(event._id);
   };
 
-  // Handle Delete
   const handleDelete = async (id) => {
     try {
       await deleteEvent(id);
-      setEvents((prevEvents) => prevEvents.filter((event) => event._id !== id)); // 🔥 Remove event from UI immediately
+      setEvents((prevEvents) => prevEvents.filter((event) => event._id !== id));
     } catch (error) {
       console.error("Error deleting event:", error);
     }
@@ -102,23 +95,36 @@ const Events = () => {
         <button type="submit">{editingId ? "Update Event" : "Create Event"}</button>
       </form>
 
-      {/* Display Events */}
-      <ul>
-        {events.map((event) => (
-          <li key={event._id}>
-            <h3>{event.title}</h3>
-            <p>{event.description}</p>
-            <p><b>Date:</b> {new Date(event.date).toDateString()}</p>
-            <p><b>Created By:</b> {event.createdBy?.name}</p>
-            {event.createdBy && event.createdBy._id === JSON.parse(localStorage.getItem("user"))?.id && (
-              <>
-                <button onClick={() => handleEdit(event)}>Edit</button>
-                <button onClick={() => handleDelete(event._id)}>Delete</button>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
+      {/* Display Events in Table Format */}
+      <table border="1" cellPadding="8" cellSpacing="0" style={{ width: "100%", marginTop: "20px", textAlign: "left" }}>
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Description</th>
+            <th>Date</th>
+            <th>Created By</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {events.map((event) => (
+            <tr key={event._id}>
+              <td>{event.title}</td>
+              <td>{event.description}</td>
+              <td>{new Date(event.date).toDateString()}</td>
+              <td>{event.createdBy?.name || "Unknown"}</td>
+              <td>
+                {event.createdBy && event.createdBy._id === JSON.parse(localStorage.getItem("user"))?.id && (
+                  <>
+                    <button onClick={() => handleEdit(event)}>Edit</button>
+                    <button onClick={() => handleDelete(event._id)}>Delete</button>
+                  </>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };
