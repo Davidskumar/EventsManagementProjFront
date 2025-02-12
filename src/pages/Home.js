@@ -6,7 +6,7 @@ const Home = () => {
 
   const handleGuestLogin = () => {
     localStorage.setItem("user", JSON.stringify({ id: "guest", name: "Guest" })); // Store guest session
-    navigate("/events"); // Redirect to events page
+    navigate("/events"); // ✅ Redirect to events page instead of login
   };
 
   return (
