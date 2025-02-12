@@ -27,7 +27,10 @@ const Events = () => {
       socketRef.current = io("https://eventsmanagementprojback.onrender.com");
 
       socketRef.current.on("eventCreated", (newEvent) => {
-        setEvents((prevEvents) => [...prevEvents, newEvent]);
+        setEvents((prevEvents) => {
+          const exists = prevEvents.some((event) => event._id === newEvent._id);
+          return exists ? prevEvents : [...prevEvents, newEvent];
+        });
       });
 
       socketRef.current.on("eventUpdated", (updatedEvent) => {
@@ -67,18 +70,14 @@ const Events = () => {
         );
       } else {
         // ✅ Ensure category is included in API request
-        const eventData = {
+        await createEvent({
           title: form.title,
           description: form.description,
           date: form.date,
           category: form.category || "Conference", // 🔹 Ensure category has a default value
-        };
-
-        console.log("Creating event with data:", eventData); // Debugging log
-
-        const { data } = await createEvent(eventData);
-        setEvents((prevEvents) => [...prevEvents, data]);
+        });
       }
+
       setForm({ title: "", description: "", date: "", category: "Conference" });
       setEditingId(null);
     } catch (error) {
