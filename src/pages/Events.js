@@ -4,7 +4,7 @@ import { io } from "socket.io-client";
 
 const Events = () => {
   const [events, setEvents] = useState([]);
-  const [form, setForm] = useState({ title: "", description: "", date: "", category: "" });
+  const [form, setForm] = useState({ title: "", description: "", date: "", category: "Conference" });
   const [editingId, setEditingId] = useState(null);
   const [filterCategory, setFilterCategory] = useState(""); // 🔍 Category Filter
   const [filterDate, setFilterDate] = useState(""); // 🔍 Date Filter
@@ -66,16 +66,20 @@ const Events = () => {
           prevEvents.map((event) => (event._id === editingId ? data : event))
         );
       } else {
-        // ✅ Fix: Ensure category is included in API request
-        const { data } = await createEvent({
+        // ✅ Ensure category is included in API request
+        const eventData = {
           title: form.title,
           description: form.description,
           date: form.date,
-          category: form.category, // 🔹 Ensure category is sent
-        });
+          category: form.category || "Conference", // 🔹 Ensure category has a default value
+        };
+
+        console.log("Creating event with data:", eventData); // Debugging log
+
+        const { data } = await createEvent(eventData);
         setEvents((prevEvents) => [...prevEvents, data]);
       }
-      setForm({ title: "", description: "", date: "", category: "" });
+      setForm({ title: "", description: "", date: "", category: "Conference" });
       setEditingId(null);
     } catch (error) {
       console.error("Error saving event:", error);
@@ -87,7 +91,7 @@ const Events = () => {
       title: event.title,
       description: event.description,
       date: event.date.split("T")[0],
-      category: event.category
+      category: event.category,
     });
     setEditingId(event._id);
   };
@@ -130,7 +134,6 @@ const Events = () => {
 
           {/* Category Selection */}
           <select name="category" value={form.category} onChange={handleChange} required>
-            <option value="">Select Category</option>
             <option value="Conference">Conference</option>
             <option value="Workshop">Workshop</option>
             <option value="Meetup">Meetup</option>
