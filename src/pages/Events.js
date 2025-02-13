@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { fetchEvents, createEvent, updateEvent, deleteEvent, joinEvent } from "../api/api";
+import { fetchEvents, createEvent, updateEvent, deleteEvent, joinEvent, leaveEvent } from "../api/api";
 import { io } from "socket.io-client";
 
 const Events = () => {
@@ -126,6 +126,17 @@ const Events = () => {
     }
   };
 
+  const handleLeave = async (id) => {
+    try {
+      const { data } = await leaveEvent(id);
+      setEvents((prevEvents) =>
+        prevEvents.map((event) => (event._id === id ? data : event))
+      );
+    } catch (error) {
+      console.error("Error leaving event:", error);
+    }
+  };
+
   return (
     <div>
       <h2>Events</h2>
@@ -193,11 +204,6 @@ const Events = () => {
                 <td>{event.createdBy?.name || "Unknown"}</td>
                 <td>
                   {event.attendees?.length || 0} Attending
-                  <ul>
-                    {event.attendees?.map((attendee) => (
-                      <li key={attendee._id}>{attendee.name}</li>
-                    ))}
-                  </ul>
                 </td>
                 <td>
                   {user.id !== "guest" && event.createdBy?._id === user?.id && (
@@ -207,6 +213,7 @@ const Events = () => {
                     </>
                   )}
                   <button onClick={() => handleJoin(event._id)}>Join Event</button>
+                  <button onClick={() => handleLeave(event._id)}>Leave Event</button>
                 </td>
               </tr>
             ))}
