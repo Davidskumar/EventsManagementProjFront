@@ -55,11 +55,14 @@ const Events = () => {
     };
   }, []);
 
+  // ✅ Ensure category changes update the state
   const handleChange = (e) => {
-    if (e.target.name === "image") {
-      setForm({ ...form, image: e.target.files[0] });
+    const { name, value, files } = e.target;
+
+    if (name === "image") {
+      setForm((prevForm) => ({ ...prevForm, image: files[0] }));
     } else {
-      setForm({ ...form, [e.target.name]: e.target.value });
+      setForm((prevForm) => ({ ...prevForm, [name]: value }));
     }
   };
 
@@ -74,7 +77,8 @@ const Events = () => {
       formData.append("title", form.title);
       formData.append("description", form.description);
       formData.append("date", form.date);
-      formData.append("category", form.category);
+      formData.append("category", form.category); // ✅ Ensure category is included
+
       if (form.image) {
         formData.append("image", form.image);
       }
@@ -92,12 +96,13 @@ const Events = () => {
     }
   };
 
+  // ✅ Ensure editing an event sets the category correctly
   const handleEdit = (event) => {
     setForm({
       title: event.title,
       description: event.description,
       date: event.date.split("T")[0],
-      category: event.category,
+      category: event.category || "Conference", // 🔹 Default to Conference if category is missing
     });
     setEditingId(event._id);
   };
@@ -160,7 +165,7 @@ const Events = () => {
           <input type="text" name="description" placeholder="Description" value={form.description} onChange={handleChange} required />
           <input type="date" name="date" value={form.date} onChange={handleChange} required />
 
-          {/* Category Selection */}
+          {/* ✅ Category Selection (Ensure value binding) */}
           <select name="category" value={form.category} onChange={handleChange} required>
             <option value="Conference">Conference</option>
             <option value="Workshop">Workshop</option>
@@ -197,20 +202,7 @@ const Events = () => {
               <td>{event.category}</td>
               <td>{event.imageUrl && <img src={event.imageUrl} alt="Event" width="80" />}</td>
               <td>{event.createdBy?.name || "Unknown"}</td>
-              <td>
-                {event.attendees && event.attendees.length > 0 ? (
-                  <>
-                    {event.attendees.length} Attending
-                    <ul>
-                      {event.attendees.map((attendee) =>
-                        attendee && attendee._id ? <li key={attendee._id}>{attendee.name}</li> : null
-                      )}
-                    </ul>
-                  </>
-                ) : (
-                  "No attendees yet"
-                )}
-              </td>
+              <td>{event.attendees?.length || 0} Attending</td>
               <td>
                 {event.createdBy?._id === user.id && (
                   <>
