@@ -6,7 +6,7 @@ const Events = () => {
   const [events, setEvents] = useState([]);
   const [form, setForm] = useState({ title: "", description: "", date: "", category: "Conference", image: null });
   const [editingId, setEditingId] = useState(null);
-  const [filterCategory, setFilterCategory] = useState("");
+  const [filterCategory, setFilterCategory] = useState(""); // ✅ Fix: Filtering by category
   const [filterDate, setFilterDate] = useState("");
   const socketRef = useRef(null);
   const user = JSON.parse(localStorage.getItem("user")) || {};
@@ -194,27 +194,29 @@ const Events = () => {
           </tr>
         </thead>
         <tbody>
-          {events.map((event) => (
-            <tr key={event._id}>
-              <td>{event.title}</td>
-              <td>{event.description}</td>
-              <td>{new Date(event.date).toDateString()}</td>
-              <td>{event.category}</td>
-              <td>{event.imageUrl && <img src={event.imageUrl} alt="Event" width="80" />}</td>
-              <td>{event.createdBy?.name || "Unknown"}</td>
-              <td>{event.attendees?.length || 0} Attending</td>
-              <td>
-                {event.createdBy?._id === user.id && (
-                  <>
-                    <button onClick={() => handleEdit(event)}>Edit</button>
-                    <button onClick={() => handleDelete(event._id)}>Delete</button>
-                  </>
-                )}
-                <button onClick={() => handleJoin(event._id)}>Join</button>
-                <button onClick={() => handleLeave(event._id)}>Leave</button>
-              </td>
-            </tr>
-          ))}
+          {events
+            .filter((event) => (filterCategory ? event.category === filterCategory : true)) // ✅ Filter by category
+            .map((event) => (
+              <tr key={event._id}>
+                <td>{event.title}</td>
+                <td>{event.description}</td>
+                <td>{new Date(event.date).toDateString()}</td>
+                <td>{event.category}</td>
+                <td>{event.imageUrl && <img src={event.imageUrl} alt="Event" width="80" />}</td>
+                <td>{event.createdBy?.name || "Unknown"}</td>
+                <td>{event.attendees?.length || 0} Attending</td>
+                <td>
+                  {event.createdBy?._id === user.id && (
+                    <>
+                      <button onClick={() => handleEdit(event)}>Edit</button>
+                      <button onClick={() => handleDelete(event._id)}>Delete</button>
+                    </>
+                  )}
+                  <button onClick={() => handleJoin(event._id)}>Join</button>
+                  <button onClick={() => handleLeave(event._id)}>Leave</button>
+                </td>
+              </tr>
+            ))}
         </tbody>
       </table>
     </div>
