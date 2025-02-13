@@ -198,12 +198,18 @@ const Events = () => {
               <td>{event.imageUrl && <img src={event.imageUrl} alt="Event" width="80" />}</td>
               <td>{event.createdBy?.name || "Unknown"}</td>
               <td>
-                {event.attendees?.length || 0} Attending
-                <ul>
-                  {event.attendees?.map((attendee) => (
-                    <li key={attendee._id}>{attendee.name}</li>
-                  ))}
-                </ul>
+                {event.attendees && event.attendees.length > 0 ? (
+                  <>
+                    {event.attendees.length} Attending
+                    <ul>
+                      {event.attendees.map((attendee) =>
+                        attendee && attendee._id ? <li key={attendee._id}>{attendee.name}</li> : null
+                      )}
+                    </ul>
+                  </>
+                ) : (
+                  "No attendees yet"
+                )}
               </td>
               <td>
                 <button onClick={() => handleJoin(event._id)}>Join</button>
