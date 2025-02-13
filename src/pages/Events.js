@@ -1,15 +1,15 @@
 import React, { useEffect, useState, useRef } from "react";
-import { fetchEvents, createEvent, updateEvent, deleteEvent } from "../api/api";
+import { fetchEvents, createEvent, updateEvent, deleteEvent, joinEvent } from "../api/api";
 import { io } from "socket.io-client";
 
 const Events = () => {
   const [events, setEvents] = useState([]);
   const [form, setForm] = useState({ title: "", description: "", date: "", category: "Conference", image: null });
   const [editingId, setEditingId] = useState(null);
-  const [filterCategory, setFilterCategory] = useState(""); // 🔍 Category Filter
-  const [filterDate, setFilterDate] = useState(""); // 🔍 Date Filter
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterDate, setFilterDate] = useState("");
   const socketRef = useRef(null);
-  const user = JSON.parse(localStorage.getItem("user")) || {}; // 🔹 Get logged-in user (or guest)
+  const user = JSON.parse(localStorage.getItem("user")) || {};
 
   useEffect(() => {
     const loadEvents = async () => {
@@ -21,16 +21,13 @@ const Events = () => {
       }
     };
 
-    loadEvents(); // Fetch events initially
+    loadEvents();
 
     if (!socketRef.current) {
       socketRef.current = io("https://eventsmanagementprojback.onrender.com");
 
       socketRef.current.on("eventCreated", (newEvent) => {
-        setEvents((prevEvents) => {
-          const exists = prevEvents.some((event) => event._id === newEvent._id);
-          return exists ? prevEvents : [...prevEvents, newEvent];
-        });
+        setEvents((prevEvents) => [...prevEvents, newEvent]);
       });
 
       socketRef.current.on("eventUpdated", (updatedEvent) => {
@@ -41,6 +38,12 @@ const Events = () => {
 
       socketRef.current.on("eventDeleted", (deletedId) => {
         setEvents((prevEvents) => prevEvents.filter((event) => event._id !== deletedId));
+      });
+
+      socketRef.current.on("attendeeUpdated", (updatedEvent) => {
+        setEvents((prevEvents) =>
+          prevEvents.map((event) => (event._id === updatedEvent._id ? updatedEvent : event))
+        );
       });
     }
 
@@ -112,6 +115,17 @@ const Events = () => {
     }
   };
 
+  const handleJoin = async (id) => {
+    try {
+      const { data } = await joinEvent(id);
+      setEvents((prevEvents) =>
+        prevEvents.map((event) => (event._id === id ? data : event))
+      );
+    } catch (error) {
+      console.error("Error joining event:", error);
+    }
+  };
+
   return (
     <div>
       <h2>Events</h2>
@@ -159,23 +173,32 @@ const Events = () => {
             <th>Category</th>
             <th>Image</th>
             <th>Created By</th>
+            <th>Attendees</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {events
-            .filter((event) => (filterCategory ? event.category === filterCategory : true)) // 🔍 Filter by Category
-            .filter((event) => (filterDate ? event.date.split("T")[0] === filterDate : true)) // 🔍 Filter by Date
+            .filter((event) => (filterCategory ? event.category === filterCategory : true))
+            .filter((event) => (filterDate ? event.date.split("T")[0] === filterDate : true))
             .map((event) => (
               <tr key={event._id}>
                 <td>{event.title}</td>
                 <td>{event.description}</td>
                 <td>{new Date(event.date).toDateString()}</td>
-                <td>{event.category}</td> {/* ✅ Show category */}
+                <td>{event.category}</td>
                 <td>
                   {event.imageUrl && <img src={event.imageUrl} alt="Event" width="80" />}
                 </td>
                 <td>{event.createdBy?.name || "Unknown"}</td>
+                <td>
+                  {event.attendees?.length || 0} Attending
+                  <ul>
+                    {event.attendees?.map((attendee) => (
+                      <li key={attendee._id}>{attendee.name}</li>
+                    ))}
+                  </ul>
+                </td>
                 <td>
                   {user.id !== "guest" && event.createdBy?._id === user?.id && (
                     <>
@@ -183,6 +206,7 @@ const Events = () => {
                       <button onClick={() => handleDelete(event._id)}>Delete</button>
                     </>
                   )}
+                  <button onClick={() => handleJoin(event._id)}>Join Event</button>
                 </td>
               </tr>
             ))}
