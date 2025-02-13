@@ -197,14 +197,21 @@ const Events = () => {
               <td>{event.category}</td>
               <td>{event.imageUrl && <img src={event.imageUrl} alt="Event" width="80" />}</td>
               <td>{event.createdBy?.name || "Unknown"}</td>
-              <td>{event.attendees?.length || 0} Attending</td>
               <td>
-                {user.id !== "guest" && event.createdBy?._id?.toString() === user.id?.toString() && (
+                {event.attendees && event.attendees.length > 0 ? (
                   <>
-                    <button onClick={() => handleEdit(event)}>Edit</button>
-                    <button onClick={() => handleDelete(event._id)}>Delete</button>
+                    {event.attendees.length} Attending
+                    <ul>
+                      {event.attendees.map((attendee) =>
+                        attendee && attendee._id ? <li key={attendee._id}>{attendee.name}</li> : null
+                      )}
+                    </ul>
                   </>
+                ) : (
+                  "No attendees yet"
                 )}
+              </td>
+              <td>
                 <button onClick={() => handleJoin(event._id)}>Join</button>
                 <button onClick={() => handleLeave(event._id)}>Leave</button>
               </td>
