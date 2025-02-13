@@ -28,7 +28,10 @@ export const updateEvent = (id, eventData) =>
     headers: { "Content-Type": "multipart/form-data" },
   });
 
-export const joinEvent = (id) => API.post(`/events/${id}/join`);
 export const deleteEvent = (id) => API.delete(`/events/${id}`);
+
+// ✅ Join & Leave Event API Calls
+export const joinEvent = (id) => API.post(`/events/${id}/join`);
+export const leaveEvent = (id) => API.post(`/events/${id}/leave`); // ✅ Fixed: Added `leaveEvent`
 
 export default API;
