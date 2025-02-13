@@ -4,7 +4,7 @@ import { io } from "socket.io-client";
 
 const Events = () => {
   const [events, setEvents] = useState([]);
-  const [form, setForm] = useState({ title: "", description: "", date: "", category: "Conference" });
+  const [form, setForm] = useState({ title: "", description: "", date: "", category: "Conference", image: null });
   const [editingId, setEditingId] = useState(null);
   const [filterCategory, setFilterCategory] = useState(""); // 🔍 Category Filter
   const [filterDate, setFilterDate] = useState(""); // 🔍 Date Filter
@@ -53,7 +53,11 @@ const Events = () => {
   }, []);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    if (e.target.name === "image") {
+      setForm({ ...form, image: e.target.files[0] });
+    } else {
+      setForm({ ...form, [e.target.name]: e.target.value });
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -63,22 +67,22 @@ const Events = () => {
       return;
     }
     try {
-      if (editingId) {
-        const { data } = await updateEvent(editingId, form);
-        setEvents((prevEvents) =>
-          prevEvents.map((event) => (event._id === editingId ? data : event))
-        );
-      } else {
-        // ✅ Ensure category is included in API request
-        await createEvent({
-          title: form.title,
-          description: form.description,
-          date: form.date,
-          category: form.category || "Conference", // 🔹 Ensure category has a default value
-        });
+      const formData = new FormData();
+      formData.append("title", form.title);
+      formData.append("description", form.description);
+      formData.append("date", form.date);
+      formData.append("category", form.category);
+      if (form.image) {
+        formData.append("image", form.image);
       }
 
-      setForm({ title: "", description: "", date: "", category: "Conference" });
+      if (editingId) {
+        await updateEvent(editingId, formData);
+      } else {
+        await createEvent(formData);
+      }
+
+      setForm({ title: "", description: "", date: "", category: "Conference", image: null });
       setEditingId(null);
     } catch (error) {
       console.error("Error saving event:", error);
@@ -126,7 +130,7 @@ const Events = () => {
 
       {/* Event Form - Hidden for Guest Users */}
       {user.id !== "guest" && (
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} encType="multipart/form-data">
           <input type="text" name="title" placeholder="Title" value={form.title} onChange={handleChange} required />
           <input type="text" name="description" placeholder="Description" value={form.description} onChange={handleChange} required />
           <input type="date" name="date" value={form.date} onChange={handleChange} required />
@@ -137,6 +141,9 @@ const Events = () => {
             <option value="Workshop">Workshop</option>
             <option value="Meetup">Meetup</option>
           </select>
+
+          {/* Image Upload */}
+          <input type="file" accept="image/*" name="image" onChange={handleChange} />
 
           <button type="submit">{editingId ? "Update Event" : "Create Event"}</button>
         </form>
@@ -150,6 +157,7 @@ const Events = () => {
             <th>Description</th>
             <th>Date</th>
             <th>Category</th>
+            <th>Image</th>
             <th>Created By</th>
             <th>Actions</th>
           </tr>
@@ -164,6 +172,9 @@ const Events = () => {
                 <td>{event.description}</td>
                 <td>{new Date(event.date).toDateString()}</td>
                 <td>{event.category}</td> {/* ✅ Show category */}
+                <td>
+                  {event.imageUrl && <img src={event.imageUrl} alt="Event" width="80" />}
+                </td>
                 <td>{event.createdBy?.name || "Unknown"}</td>
                 <td>
                   {user.id !== "guest" && event.createdBy?._id === user?.id && (
