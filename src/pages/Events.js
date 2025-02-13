@@ -212,6 +212,12 @@ const Events = () => {
                 )}
               </td>
               <td>
+                {event.createdBy?._id === user.id && (
+                  <>
+                    <button onClick={() => handleEdit(event)}>Edit</button>
+                    <button onClick={() => handleDelete(event._id)}>Delete</button>
+                  </>
+                )}
                 <button onClick={() => handleJoin(event._id)}>Join</button>
                 <button onClick={() => handleLeave(event._id)}>Leave</button>
               </td>
