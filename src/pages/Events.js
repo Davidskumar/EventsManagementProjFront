@@ -6,7 +6,7 @@ const Events = () => {
   const [events, setEvents] = useState([]);
   const [form, setForm] = useState({ title: "", description: "", date: "", category: "Conference", image: null });
   const [editingId, setEditingId] = useState(null);
-  const [filterCategory, setFilterCategory] = useState(""); // ✅ Fix: Filtering by category
+  const [filterCategory, setFilterCategory] = useState("");
   const [filterDate, setFilterDate] = useState("");
   const socketRef = useRef(null);
   const user = JSON.parse(localStorage.getItem("user")) || {};
@@ -55,10 +55,8 @@ const Events = () => {
     };
   }, []);
 
-  // ✅ Ensure category changes update the state
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-
     if (name === "image") {
       setForm((prevForm) => ({ ...prevForm, image: files[0] }));
     } else {
@@ -77,8 +75,7 @@ const Events = () => {
       formData.append("title", form.title);
       formData.append("description", form.description);
       formData.append("date", form.date);
-      formData.append("category", form.category); // ✅ Ensure category is included
-
+      formData.append("category", form.category);
       if (form.image) {
         formData.append("image", form.image);
       }
@@ -96,13 +93,12 @@ const Events = () => {
     }
   };
 
-  // ✅ Ensure editing an event sets the category correctly
   const handleEdit = (event) => {
     setForm({
       title: event.title,
       description: event.description,
       date: event.date.split("T")[0],
-      category: event.category || "Conference", // 🔹 Default to Conference if category is missing
+      category: event.category || "Conference",
     });
     setEditingId(event._id);
   };
@@ -165,14 +161,12 @@ const Events = () => {
           <input type="text" name="description" placeholder="Description" value={form.description} onChange={handleChange} required />
           <input type="date" name="date" value={form.date} onChange={handleChange} required />
 
-          {/* ✅ Category Selection (Ensure value binding) */}
           <select name="category" value={form.category} onChange={handleChange} required>
             <option value="Conference">Conference</option>
             <option value="Workshop">Workshop</option>
             <option value="Meetup">Meetup</option>
           </select>
 
-          {/* Image Upload */}
           <input type="file" accept="image/*" name="image" onChange={handleChange} />
 
           <button type="submit">{editingId ? "Update Event" : "Create Event"}</button>
@@ -194,29 +188,40 @@ const Events = () => {
           </tr>
         </thead>
         <tbody>
-          {events
-            .filter((event) => (filterCategory ? event.category === filterCategory : true)) // ✅ Filter by category
-            .map((event) => (
-              <tr key={event._id}>
-                <td>{event.title}</td>
-                <td>{event.description}</td>
-                <td>{new Date(event.date).toDateString()}</td>
-                <td>{event.category}</td>
-                <td>{event.imageUrl && <img src={event.imageUrl} alt="Event" width="80" />}</td>
-                <td>{event.createdBy?.name || "Unknown"}</td>
-                <td>{event.attendees?.length || 0} Attending</td>
-                <td>
-                  {event.createdBy?._id === user.id && (
-                    <>
-                      <button onClick={() => handleEdit(event)}>Edit</button>
-                      <button onClick={() => handleDelete(event._id)}>Delete</button>
-                    </>
-                  )}
-                  <button onClick={() => handleJoin(event._id)}>Join</button>
-                  <button onClick={() => handleLeave(event._id)}>Leave</button>
-                </td>
-              </tr>
-            ))}
+          {events.map((event) => (
+            <tr key={event._id}>
+              <td>{event.title}</td>
+              <td>{event.description}</td>
+              <td>{new Date(event.date).toDateString()}</td>
+              <td>{event.category}</td>
+              <td>{event.imageUrl && <img src={event.imageUrl} alt="Event" width="80" />}</td>
+              <td>{event.createdBy?.name || "Unknown"}</td>
+              <td>
+                {event.attendees?.length ? (
+                  <>
+                    {event.attendees.length} Attending
+                    <ul>
+                      {event.attendees.map((attendee) =>
+                        attendee?.name ? <li key={attendee._id}>{attendee.name}</li> : null
+                      )}
+                    </ul>
+                  </>
+                ) : (
+                  "No attendees yet"
+                )}
+              </td>
+              <td>
+                {user.id !== "guest" && event.createdBy?._id === user.id && (
+                  <>
+                    <button onClick={() => handleEdit(event)}>Edit</button>
+                    <button onClick={() => handleDelete(event._id)}>Delete</button>
+                  </>
+                )}
+                <button onClick={() => handleJoin(event._id)}>Join</button>
+                <button onClick={() => handleLeave(event._id)}>Leave</button>
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
